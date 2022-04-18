@@ -1,6 +1,6 @@
 /*
 
-  ESP32-CAM-Video-SDCard-Recoding0-with-Remote-Control
+  ESP32-CAM-Video-SDCard-Recoding-with-Remote-Control
 
   This program records an mjpeg avi video to the sd card of an ESP32-CAM, from the 'start' and 'stop' commands of a TCP/IP client.
 
@@ -18,7 +18,7 @@
     10 - is a number stored in eprom that will increase everytime your device boots
     3 - is the 3rd file created during the current boot
 
-  Small red led on the back blinks with every frame.
+  Small red led on the back blinks with every frame (turned off, to save battery).
 
 
   by Huawei Wang April 09, 2022
@@ -71,8 +71,7 @@ static const char vernum[] = "v01";
 char devname[30];
 String devstr =  "shoecam";
 
-int IncludeInternet = 1;      // 0 for no internet, 1 for time only, 2 streaming with WiFiMan, 3 ssid in file, 4 default internet on and file
-
+int IncludeInternet = 1;      // 0 for no internet, 1 for time and remote control, 2 streaming with WiFiMan (undefined), 3 ssid in file (undefined), 4 default internet on and file (undefined)
 
 const char* ssid = "H-Wang-H";
 const char* password = "";
@@ -89,13 +88,14 @@ int framesizeconfig = FRAMESIZE_UXGA;
 int qualityconfig = 5;
 int buffersconfig = 3;
 int avi_length = 1800;            // how long a movie in seconds -- 1800 sec = 30 min
-int frame_interval = 0;          // record at full speed
+int frame_interval = 0;           // record at full speed
 int speed_up_factor = 1;          // play at realtime
 int stream_delay = 500;           // minimum of 500 ms delay between frames
-int MagicNumber = 12;                // change this number to reset the eprom in your esp32 for file numbers
+int MagicNumber = 12;             // change this number to reset the eprom in your esp32 for file numbers
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 bool configfile = false;
 bool InternetOff = false;  // enable internet for remote control
 bool reboot_now = false;
@@ -699,7 +699,7 @@ void read_config_file() {
   int cspeedup = 1;
   int cstreamdelay = 0;
   int cinternet = 0;
-  String czone = "GMT";
+  String czone = "CET-1CEST-2";
   cssid = "H-Wang-H";
   cpass = "";
 
@@ -711,7 +711,15 @@ void read_config_file() {
     junk = config_file.readStringUntil('\n');
     cframesize = config_file.parseInt();
     junk = config_file.readStringUntil('\n');
-
+    cquality = config_file.parseInt();
+    junk = config_file.readStringUntil('\n');
+    cframesizeconfig = config_file.parseInt();
+    junk = config_file.readStringUntil('\n');
+    cqualityconfig = config_file.parseInt();
+    junk = config_file.readStringUntil('\n');
+    cbuffersconfig = config_file.parseInt();
+    junk = config_file.readStringUntil('\n');
+    
     clength = config_file.parseInt();
     junk = config_file.readStringUntil('\n');
     cinterval = config_file.parseInt();
@@ -719,6 +727,8 @@ void read_config_file() {
     cspeedup = config_file.parseInt();
     junk = config_file.readStringUntil('\n');
     cstreamdelay = config_file.parseInt();
+    junk = config_file.readStringUntil('\n');
+    cinternet = config_file.parseInt();
     junk = config_file.readStringUntil('\n');
     czone = config_file.readStringUntil(' ');
     junk = config_file.readStringUntil('\n');
@@ -2176,9 +2186,9 @@ void the_camera_loop (void* pvParameter) {
     if (frame_cnt == 0 && start_record == 0) {
 
       // Serial.println("Do nothing");
-      if (we_are_already_stopped == 0) Serial.println("\n send command from remote control to start recording.\n\n");
+      if (we_are_already_stopped == 0) Serial.println("\n send command from remote control to start recording ...\n");
       we_are_already_stopped = 1;
-      delay(25);
+      delay(5);
 
       ///////////////////  START A MOVIE  //////////////////
     } else if (frame_cnt == 0 && start_record == 1) {
@@ -2345,7 +2355,7 @@ void loop() {
           client.write("Command not executable .. \n");
         }
         }
-        delay(25);
+        delay(5);
       }
   
     client.stop();
